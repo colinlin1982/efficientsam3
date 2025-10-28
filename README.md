@@ -1,5 +1,5 @@
 ### EfficientSAM3: Progressive Hierachical Knowledge Distillation (PhD) from SAM1, 2 and 3
-[Chengxi Simon Zeng](https://simonzeng7108.github.io/about/), [Yuxuan Jiang](https://pikapi22.github.io/), [Aaron Zhang](https://fan-aaron-zhang.github.io/)
+[Chengxi Simon Zeng](https://simonzeng7108.github.io/about/), [Yuxuan Jiang](https://YuxuanJJ.github.io/), [Aaron Zhang](https://fan-aaron-zhang.github.io/)
 
 Visual Information Lab, University of Bristol
 
@@ -254,4 +254,5 @@ This work is inspired by and builds upon:
 - **[RepViT](https://github.com/THU-MIG/RepViT)** - Mobile-optimized Vision Transformer backbones
 - **[TinyViT](https://github.com/wkcn/TinyViT)** - Tiny Vision Transformer architectures
 - **[EfficientViT](https://github.com/mit-han-lab/efficientvit)** - Efficient Vision Transformer models
+
 
