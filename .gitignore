@@ -98,6 +98,7 @@ env/
 .env.*.local
 .env.*
 !.env.example
+*.pem
 
 # Editors/IDEs
 .vscode/
@@ -143,7 +144,10 @@ data/*
 !data/download_sa1b.sh
 !data/sa-v.txt
 !data/sa-1b.txt
+!data/sa-1b-10p.txt
 
 
 
 !images
+personal-site
+sam3_checkpoints
