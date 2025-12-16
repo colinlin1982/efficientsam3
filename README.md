@@ -114,14 +114,8 @@ EfficientSAM3 purposely shares the same software contract as upstream SAM3:
 - **PyTorch** 2.7.0 (CUDA 12.6 build recommended)
 - **CUDA**-capable GPUs with drivers that support CUDA ≥ 12.6
 
-Follow the exact environment setup from the [official SAM3 README](sam3/README.md) or use the condensed steps below (single-node example):
-EfficientSAM3 purposely shares the same software contract as upstream SAM3:
+Follow the exact environment setup from the [official SAM3 README](sam3/README.md) or use the condensed steps below:
 
-- **Python** ≥ 3.12
-- **PyTorch** 2.7.0 (CUDA 12.6 build recommended)
-- **CUDA**-capable GPUs with drivers that support CUDA ≥ 12.6
-
-Follow the exact environment setup from the [official SAM3 README](sam3/README.md) or use the condensed steps below (single-node example):
 
 ```bash
 git clone https://github.com/SimonZeng7108/efficientsam3.git
@@ -342,7 +336,7 @@ If you use EfficientSAM3 in your research, please cite:
 This repository is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
 
 This project builds upon [SAM](https://github.com/facebookresearch/segment-anything), [SAM2](https://github.com/facebookresearch/sam2), [SAM3](https://github.com/facebookresearch/sam3), [EdgeSAM](https://github.com/chongzhou96/EdgeSAM), [EdgeTAM](https://github.com/facebookresearch/EdgeTAM), [EfficientTAM](https://github.com/yformer/EfficientTAM), [RepViT](https://github.com/THU-MIG/RepViT), [TinyViT](https://github.com/wkcn/TinyViT), [EfficientViT](https://github.com/mit-han-lab/efficientvit), and [MobileCLIP](https://github.com/apple/ml-mobileclip). Please refer to their respective licenses for usage terms.
-This project builds upon [SAM](https://github.com/facebookresearch/segment-anything), [SAM2](https://github.com/facebookresearch/sam2), [SAM3](https://github.com/facebookresearch/sam3), [EdgeSAM](https://github.com/chongzhou96/EdgeSAM), [EdgeTAM](https://github.com/facebookresearch/EdgeTAM), [EfficientTAM](https://github.com/yformer/EfficientTAM), [RepViT](https://github.com/THU-MIG/RepViT), [TinyViT](https://github.com/wkcn/TinyViT), [EfficientViT](https://github.com/mit-han-lab/efficientvit), and [MobileCLIP](https://github.com/apple/ml-mobileclip). Please refer to their respective licenses for usage terms.
+
 
 ## Acknowledgments
 
