@@ -117,6 +117,14 @@ bash stage1_geometry_finetune/scripts/train_geometry_finetune.sh \
   OUTPUT=output_geometry_finetune/es_rv_m \
   BATCH_SIZE=4 \
   GPUS=1
+
+# Multi-GPU (e.g., 8 GPUs)
+bash stage1_geometry_finetune/scripts/train_geometry_finetune.sh \
+  CFG=stage1_geometry_finetune/configs/es_rv_m.yaml \
+  DATA_PATH=data/sa-1b \
+  OUTPUT=output_geometry_finetune/es_rv_m \
+  BATCH_SIZE=4 \
+  GPUS=8
 ```
 
 **Or run the Python entry point directly:**

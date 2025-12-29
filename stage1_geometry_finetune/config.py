@@ -131,7 +131,8 @@ def _update_config_from_file(config, cfg_file):
                 config, os.path.join(os.path.dirname(cfg_file), cfg)
             )
             config.defrost()
-    print('=> merge config from {}'.format(cfg_file))
+    if os.environ.get('RANK', '0') == '0':
+        print('=> merge config from {}'.format(cfg_file))
     config.merge_from_file(cfg_file)
     config.freeze()
 

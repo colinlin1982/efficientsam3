@@ -426,8 +426,8 @@ if __name__ == '__main__':
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         rank = int(os.environ['RANK'])
         world_size = int(os.environ['WORLD_SIZE'])
-        dist.init_process_group('nccl')
         torch.cuda.set_device(config.LOCAL_RANK)
+        dist.init_process_group('nccl')
     else:
         rank = 0
         world_size = 1
