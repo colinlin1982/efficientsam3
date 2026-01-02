@@ -423,9 +423,14 @@ def collate_fn(batch: List[Dict]) -> Dict[str, torch.Tensor]:
     img_sizes = torch.stack([item['img_size_before_pad'] for item in batch])
     keys = [item['key'] for item in batch]
     
-    # Pad prompts to max length in batch
-    max_prompts = max(item['boxes'].shape[0] if item['boxes'] is not None else 0 
-                      for item in batch)
+    # Pad prompts to max length in batch.
+    # Supports boxes-only, points-only, or boxes+points (paired prompts).
+    max_prompts = 0
+    for item in batch:
+        if item.get('boxes') is not None:
+            max_prompts = max(max_prompts, item['boxes'].shape[0])
+        if item.get('points') is not None:
+            max_prompts = max(max_prompts, item['points'].shape[0])
     
     batch_size = len(batch)
     
@@ -436,14 +441,23 @@ def collate_fn(batch: List[Dict]) -> Dict[str, torch.Tensor]:
     prompt_mask = torch.ones(batch_size, max_prompts, dtype=torch.bool)  # True = masked
     
     for i, item in enumerate(batch):
-        if item['boxes'] is not None:
-            n = item['boxes'].shape[0]
-            boxes[i, :n] = item['boxes']
-            prompt_mask[i, :n] = False
-        if item['points'] is not None:
-            n = item['points'].shape[0]
-            points[i, :n] = item['points']
-            point_labels[i, :n] = item['point_labels']
+        n_boxes = item['boxes'].shape[0] if item.get('boxes') is not None else 0
+        n_points = item['points'].shape[0] if item.get('points') is not None else 0
+        if n_boxes > 0 and n_points > 0 and n_boxes != n_points:
+            raise ValueError(
+                f"Expected paired box+point prompts to have the same length, "
+                f"got n_boxes={n_boxes} and n_points={n_points}."
+            )
+
+        if n_boxes > 0:
+            boxes[i, :n_boxes] = item['boxes']
+        if n_points > 0:
+            points[i, :n_points] = item['points']
+            point_labels[i, :n_points] = item['point_labels']
+
+        n_valid = max(n_boxes, n_points)
+        if n_valid > 0:
+            prompt_mask[i, :n_valid] = False
     
     result = {
         'images': images,

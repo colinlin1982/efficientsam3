@@ -82,6 +82,19 @@ DISTILL:
   MAX_PROMPTS: 16
   NO_RAND: false
 
+  # Prompt mixing + iterative refinement (optional; defaults preserve original behavior)
+  PROMPT_MIX: false
+  PROMPT_MIX_PROB_BOX: 0.5
+  SELECT_BEST_MASK: true
+  DECODE_ITERS: 1
+  POINTS_PER_REFINE_ITER: 0
+  # If POINTS_PER_REFINE_ITER_MAX > 0, we sample a random number of refinement points in [MIN, MAX]
+  # per refinement iteration (EdgeSAM-style), guaranteeing at least MIN points when possible.
+  POINTS_PER_REFINE_ITER_MIN: 1
+  POINTS_PER_REFINE_ITER_MAX: 0
+  ITER_ON_BOX: true
+  TEACHER_MASK_THRESHOLD: 0.0
+
 # Misc
 AMP_ENABLE: True
 OUTPUT: "output_geometry_finetune"

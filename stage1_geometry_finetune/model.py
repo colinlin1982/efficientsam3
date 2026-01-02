@@ -321,7 +321,9 @@ class GeometryFinetuneModel(nn.Module):
         boxes: Optional[torch.Tensor] = None,
         points: Optional[torch.Tensor] = None,
         point_labels: Optional[torch.Tensor] = None,
-        prompt_mask: Optional[torch.Tensor] = None,
+        box_mask: Optional[torch.Tensor] = None,
+        point_mask: Optional[torch.Tensor] = None,
+        prompt_mask: Optional[torch.Tensor] = None,  # legacy: shared mask for paired prompts
     ) -> Dict[str, torch.Tensor]:
         """
         Forward through frozen SAM3 components to get mask predictions.
@@ -357,6 +359,8 @@ class GeometryFinetuneModel(nn.Module):
             boxes=boxes,
             points=points,
             point_labels=point_labels,
+            box_mask=box_mask,
+            point_mask=point_mask,
             prompt_mask=prompt_mask,
             batch_size=batch_size,
             device=device,
@@ -468,27 +472,30 @@ class GeometryFinetuneModel(nn.Module):
         boxes: Optional[torch.Tensor],
         points: Optional[torch.Tensor],
         point_labels: Optional[torch.Tensor],
-        prompt_mask: Optional[torch.Tensor],
+        box_mask: Optional[torch.Tensor],
+        point_mask: Optional[torch.Tensor],
+        prompt_mask: Optional[torch.Tensor],  # legacy: shared mask for paired prompts
         batch_size: int,
         device: torch.device,
     ):
         """Build SAM3's Prompt object from boxes and points."""
         from sam3.model.geometry_encoders import Prompt
         
-        # prompt_mask: (B, N) where True indicates padded/invalid prompts
-        if prompt_mask is None:
-            if boxes is not None and boxes.numel() > 0:
-                prompt_mask = torch.zeros(batch_size, boxes.shape[1], device=device, dtype=torch.bool)
-            elif points is not None and points.numel() > 0:
-                prompt_mask = torch.zeros(batch_size, points.shape[1], device=device, dtype=torch.bool)
-            else:
-                prompt_mask = torch.zeros(batch_size, 0, device=device, dtype=torch.bool)
+        # Masks follow PyTorch convention: True indicates padded/invalid prompts.
+        # We support separate box/point masks (needed for iterative refinement),
+        # while keeping `prompt_mask` for backward compatibility with paired prompts.
+        if prompt_mask is not None and (box_mask is None and point_mask is None):
+            box_mask = prompt_mask
+            point_mask = prompt_mask
 
         # Convert boxes from (B, N, 4) to (N, B, 4) format
         if boxes is not None and boxes.numel() > 0:
             boxes_t = boxes.transpose(0, 1)  # (N, B, 4)
             n_boxes = boxes_t.shape[0]
-            box_mask = prompt_mask[:, :n_boxes]
+            if box_mask is None:
+                box_mask = torch.zeros(batch_size, n_boxes, device=device, dtype=torch.bool)
+            else:
+                box_mask = box_mask[:, :n_boxes]
             box_labels = torch.ones(n_boxes, batch_size, device=device, dtype=torch.long)
         else:
             boxes_t = torch.zeros(0, batch_size, 4, device=device)
@@ -499,7 +506,10 @@ class GeometryFinetuneModel(nn.Module):
         if points is not None and points.numel() > 0:
             points_t = points.transpose(0, 1)  # (N, B, 2)
             n_points = points_t.shape[0]
-            point_mask = prompt_mask[:, :n_points]
+            if point_mask is None:
+                point_mask = torch.zeros(batch_size, n_points, device=device, dtype=torch.bool)
+            else:
+                point_mask = point_mask[:, :n_points]
             if point_labels is not None:
                 labels_t = point_labels.transpose(0, 1)  # (N, B)
             else:

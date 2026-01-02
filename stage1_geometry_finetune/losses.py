@@ -239,8 +239,8 @@ class GeometryFinetuningLoss(nn.Module):
     
     def forward(
         self,
-        student_embedding: torch.Tensor,
-        teacher_embedding: torch.Tensor,
+        student_embedding: Optional[torch.Tensor] = None,
+        teacher_embedding: Optional[torch.Tensor] = None,
         student_masks: Optional[torch.Tensor] = None,
         teacher_masks: Optional[torch.Tensor] = None,
         student_iou: Optional[torch.Tensor] = None,
@@ -268,7 +268,11 @@ class GeometryFinetuningLoss(nn.Module):
         total_loss = 0.0
         
         # Embedding loss
-        if self.embedding_weight > 0:
+        if (
+            self.embedding_weight > 0
+            and student_embedding is not None
+            and teacher_embedding is not None
+        ):
             if self.use_cosine_embedding:
                 embed_loss = masked_cosine_loss(
                     student_embedding, teacher_embedding, valid_mask

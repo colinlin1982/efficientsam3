@@ -76,6 +76,19 @@ _C.DISTILL.USE_POINT_PROMPTS = True
 _C.DISTILL.MAX_PROMPTS = 16
 _C.DISTILL.NO_RAND = True
 
+# Prompt mixing + iterative refinement (EdgeSAM-style, adapted for SAM3)
+# - If PROMPT_MIX is enabled and both boxes+points are available, each step randomly picks box-only vs point-only.
+# - If DECODE_ITERS > 1, we run multiple mask predictions and add refinement points sampled from teacher/student disagreement.
+_C.DISTILL.PROMPT_MIX = False
+_C.DISTILL.PROMPT_MIX_PROB_BOX = 0.5  # P(box-only) vs P(point-only)=1-P
+_C.DISTILL.SELECT_BEST_MASK = True  # select teacher's best mask (by pred_logits) for distillation/refinement
+_C.DISTILL.DECODE_ITERS = 1
+_C.DISTILL.POINTS_PER_REFINE_ITER = 0
+_C.DISTILL.POINTS_PER_REFINE_ITER_MIN = 1  # only used if POINTS_PER_REFINE_ITER_MAX > 0
+_C.DISTILL.POINTS_PER_REFINE_ITER_MAX = 0  # if >0, sample randint[min,max] each refinement iter
+_C.DISTILL.ITER_ON_BOX = True  # allow adding points even if starting from box-only prompts
+_C.DISTILL.TEACHER_MASK_THRESHOLD = 0.0  # logits threshold for binarizing teacher/student masks during refinement
+
 # -----------------------------------------------------------------------------
 # Training settings
 # -----------------------------------------------------------------------------
