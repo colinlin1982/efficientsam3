@@ -7,6 +7,7 @@
 [📄 Paper](https://arxiv.org/abs/2511.15833) | [🌐 Project Page](https://simonzeng7108.github.io/efficientsam3/) | [🤗 Hugging Face](https://huggingface.co/Simon7108528/EfficientSAM3) | [💬 Discord](https://discord.gg/FMyaQca7xT)
 ---
 ## Updates
+- **[2026/02/18]** **SAM3-LiteText** released! SAM3-LiteText reduces text encoder parameters by up to 88% with similar performance to the original text encoder. [Paper](https://arxiv.org/abs/2602.12173) available on arXiv. Code available in [`sam3_litetext`](https://github.com/SimonZeng7108/efficientsam3/tree/sam3_litetext) branch and weights on [Hugging Face](https://huggingface.co/Simon7108528/EfficientSAM3/tree/main/sam3_litetext).
 - **[2026/01/11]** Stage 1 geometry-prompt fine-tuned (**ft**) weights released/updated (image encoders on 1% SA-1B; text encoders fine-tuned on SA-Co Gold+Silver).
 - **[2025/12/08]** Stage 1 text encoder weights released for all 3 variants (MobileCLIP S0, S1, and MobileCLIP2 L) - distilled on 1% Recap-DataComp-1B dataset.
 - **[2025/12/02]** Stage 1 image encoder weights released for all 9 variants (RepViT, TinyViT, EfficientViT) - unsupervised distilled on 1% of SA-1B dataset.
