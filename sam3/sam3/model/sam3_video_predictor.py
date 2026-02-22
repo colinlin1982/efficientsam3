@@ -34,13 +34,21 @@ class Sam3VideoPredictor:
         async_loading_frames=False,
         video_loader_type="cv2",
         apply_temporal_disambiguation: bool = True,
+        # Allow custom model builder
+        model_builder=None,
+        **custom_model_kwargs,
     ):
         self.async_loading_frames = async_loading_frames
         self.video_loader_type = video_loader_type
-        from sam3.model_builder import build_sam3_video_model
+        
+        if model_builder is None:
+            from sam3.model_builder import build_sam3_video_model
+            model_builder = build_sam3_video_model
 
-        self.model = (
-            build_sam3_video_model(
+        # Only pass known arguments to the default builder, 
+        # or pass all kwargs if using a custom builder
+        if model_builder.__name__ == "build_sam3_video_model":
+            self.model = model_builder(
                 checkpoint_path=checkpoint_path,
                 bpe_path=bpe_path,
                 has_presence_token=has_presence_token,
@@ -48,9 +56,18 @@ class Sam3VideoPredictor:
                 strict_state_dict_loading=strict_state_dict_loading,
                 apply_temporal_disambiguation=apply_temporal_disambiguation,
             )
-            .cuda()
-            .eval()
-        )
+        else:
+            # For custom builders (like efficient sam), pass all args
+            self.model = model_builder(
+                checkpoint_path=checkpoint_path,
+                bpe_path=bpe_path,
+                has_presence_token=has_presence_token,
+                geo_encoder_use_img_cross_attn=geo_encoder_use_img_cross_attn,
+                strict_state_dict_loading=strict_state_dict_loading,
+                apply_temporal_disambiguation=apply_temporal_disambiguation,
+                **custom_model_kwargs,
+            )
+
 
     @torch.inference_mode()
     def handle_request(self, request):
@@ -288,7 +305,35 @@ class Sam3VideoPredictor:
 
 
 class Sam3VideoPredictorMultiGPU(Sam3VideoPredictor):
-    def __init__(self, *model_args, gpus_to_use=None, **model_kwargs):
+    def __init__(
+        self,
+        checkpoint_path=None,
+        bpe_path=None,
+        has_presence_token=True,
+        geo_encoder_use_img_cross_attn=True,
+        strict_state_dict_loading=True,
+        async_loading_frames=False,
+        video_loader_type="cv2",
+        apply_temporal_disambiguation: bool = True,
+        gpus_to_use=None,
+        model_builder=None,
+        **custom_model_kwargs,
+    ):
+        model_kwargs = {}
+        # Collect args for super init
+        model_args = {
+            "checkpoint_path": checkpoint_path,
+            "bpe_path": bpe_path,
+            "has_presence_token": has_presence_token,
+            "geo_encoder_use_img_cross_attn": geo_encoder_use_img_cross_attn,
+            "strict_state_dict_loading": strict_state_dict_loading,
+            "async_loading_frames": async_loading_frames,
+            "video_loader_type": video_loader_type,
+            "apply_temporal_disambiguation": apply_temporal_disambiguation,
+            "model_builder": model_builder,
+        }
+        model_args.update(custom_model_kwargs)
+
         if gpus_to_use is None:
             # if not specified, use only the current GPU by default
             gpus_to_use = [torch.cuda.current_device()]
@@ -315,13 +360,13 @@ class Sam3VideoPredictorMultiGPU(Sam3VideoPredictor):
             logger.info("\n\n\n\t*** START loading model on all ranks ***\n\n")
 
         logger.info(f"loading model on {self.rank_str} -- this could take a while ...")
-        super().__init__(*model_args, **model_kwargs)
+        super().__init__(**model_args)
         logger.info(f"loading model on {self.rank_str} -- DONE locally")
 
         if self.world_size > 1 and self.rank == 0:
             # start the worker processes *after* the model is loaded in the main process
             # so that the main process can run torch.compile and fill the cache first
-            self._start_worker_processes(*model_args, **model_kwargs)
+            self._start_worker_processes(**model_args)
             for rank in range(1, self.world_size):
                 self.command_queues[rank].put(("start_nccl_process_group", None))
             self._start_nccl_process_group()
@@ -401,6 +446,7 @@ class Sam3VideoPredictorMultiGPU(Sam3VideoPredictor):
         # revert the environment variables for the main process
         os.environ["IS_MAIN_PROCESS"] = "1"
         os.environ["RANK"] = "0"
+
         # wait for all the worker processes to load the model and collect their PIDs
         self.worker_pids = {}
         for rank in range(1, self.world_size):

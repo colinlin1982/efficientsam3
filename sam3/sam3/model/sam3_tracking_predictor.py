@@ -82,7 +82,10 @@ class Sam3TrackerPredictor(Sam3TrackerBase):
 
         # If a caller overwrote `self.backbone` (common in the SAM2-video-task demo),
         # ensure the tracker is on the same device as the backbone before creating state.
-        backbone_device = _infer_module_device(getattr(self, "backbone", self))
+        backbone_module = getattr(self, "backbone", self)
+        if backbone_module is None:
+            backbone_module = self
+        backbone_device = _infer_module_device(backbone_module)
         if backbone_device is not None and backbone_device != self.device:
             self.to(device=backbone_device)
 

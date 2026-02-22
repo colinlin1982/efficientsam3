@@ -1,10 +1,10 @@
 ### EfficientSAM3: Progressive Hierachical Knowledge Distillation (PhD) from SAM1, 2 and 3
-[Chengxi Simon Zeng](https://simonzeng7108.github.io/about/)<sup>1,†</sup>, [Yuxuan Jiang](https://YuxuanJJ.github.io/)<sup>1</sup>, [Gao Ge](https://scholar.google.com/citations?user=j2_80ewAAAAJ&hl=en)<sup>1</sup>, [Shuai Wang](https://shuaiwang97.github.io/)<sup>2</sup>, [Fan Aaron Zhang](https://fan-aaron-zhang.github.io/)<sup>1</sup>
-<sup>1</sup>Visual Information Lab, University of Bristol; <sup>2</sup>MultiX lab, University of Amsterdam
+[Chengxi Simon Zeng](https://simonzeng7108.github.io/about/)<sup>1,†</sup>, [Yuxuan Jiang](https://YuxuanJJ.github.io/)<sup>1</sup>, [Gao Ge](https://scholar.google.com/citations?user=j2_80ewAAAAJ&hl=en)<sup>1</sup>, [Shuai Wang](https://shuaiwang97.github.io/)<sup>2</sup>, [Duolikun Danier](https://scholar.google.com/citations?user=Example)<sup>3</sup>, [Bin Zhu](https://scholar.google.com/citations?user=Example)<sup>4</sup>, [Stevan Rudinac](https://scholar.google.com/citations?user=Example)<sup>2</sup>, [David Bull](https://scholar.google.com/citations?user=Example)<sup>1</sup>, [Fan Aaron Zhang](https://fan-aaron-zhang.github.io/)<sup>1</sup>
+<sup>1</sup>Visual Information Lab, University of Bristol; <sup>2</sup>MultiX lab, University of Amsterdam; <sup>3</sup>University of Edinburgh; <sup>4</sup>Singapore Management University
 
 <sup>†</sup>Tech Lead & Corresponding Author
 
-[📄 Paper](https://arxiv.org/abs/2511.15833) | [🌐 Project Page](https://simonzeng7108.github.io/efficientsam3/) | [🤗 Hugging Face](https://huggingface.co/Simon7108528/EfficientSAM3) | [💬 Discord](https://discord.gg/FMyaQca7xT)
+[![arXiv](https://img.shields.io/badge/arXiv-EfficientSAM3-b31b1b.svg)](https://arxiv.org/abs/2511.15833) [![arXiv](https://img.shields.io/badge/arXiv-SAM3--LiteText-b31b1b.svg)](https://arxiv.org/abs/2602.12173) [![Project Page](https://img.shields.io/badge/Project-Page-green)](https://simonzeng7108.github.io/efficientsam3/) [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-EfficientSAM3-blue)](https://huggingface.co/Simon7108528/EfficientSAM3) [![Discord](https://img.shields.io/badge/Discord-Join-7289da?logo=discord&logoColor=white)](https://discord.gg/FMyaQca7xT)
 ---
 ## Updates
 - **[2026/02/18]** **SAM3-LiteText** released! SAM3-LiteText reduces text encoder parameters by up to 88% with similar performance to the original text encoder. [Paper](https://arxiv.org/abs/2602.12173) available on arXiv. Code available in [`sam3_litetext`](https://github.com/SimonZeng7108/efficientsam3/tree/sam3_litetext) branch and weights on [Hugging Face](https://huggingface.co/Simon7108528/EfficientSAM3/tree/main/sam3_litetext).
@@ -283,6 +283,18 @@ For dataset setup and download scripts (`data/download_*.sh`) covering COCO, DAV
 
 > **Note (2026/01/11):** The fine-tuned (**ft**) text encoder models are fine-tuned on SA-Co Gold+Silver text annotations. Standalone fine-tuned text encoder weights: [MobileCLIP-S0](https://drive.google.com/file/d/1JtbqC2d_F0i9pN-skGuUfSnJx50aAKsd/view?usp=sharing), [MobileCLIP-S1](https://drive.google.com/file/d/14x9iwLnVq282fGPy8JypnCWsB9da_1Mh/view?usp=sharing), and [MobileCLIP2-L](https://drive.google.com/file/d/1xdyDkGaBwUYALZ1u7U7sGS7yq-gIEnDz/view?usp=sharing).
 
+### SAM3-LiteText Models
+
+SAM3-LiteText replaces the SAM3 text encoder with a lightweight distilled text encoder, reducing text encoder parameters by up to **88%** with comparable performance. See the [SAM3-LiteText paper](https://arxiv.org/abs/2602.12173) for details.
+
+| Model | Text Encoder | Ctx | Text Params | Weights |
+|-------|--------------|-----|-------------|---------|
+| **SAM3-LiteText-S0-16** | MobileCLIP-S0 | 16 | 42.54M | [HF](https://huggingface.co/Simon7108528/EfficientSAM3/resolve/main/sam3_litetext/efficient_sam3_image_encoder_mobileclip_s0_ctx16.pt)/ [GDrive](https://drive.google.com/file/d/1Eo81WYzfozFSvgvwlScGorUAIfMVPAFm/view?usp=sharing) |
+| **SAM3-LiteText-S1-16** | MobileCLIP-S1 | 16 | 63.53M | [HF](https://huggingface.co/Simon7108528/EfficientSAM3/resolve/main/sam3_litetext/efficient_sam3_image_encoder_mobileclip_s1_ctx16.pt)/ [GDrive](https://drive.google.com/file/d/1zL6x91PzvupHtZdA68jYip6yAUel8MMV/view?usp=sharing) |
+| **SAM3-LiteText-L-16** | MobileCLIP2-L | 16 | 123.80M | [HF](https://huggingface.co/Simon7108528/EfficientSAM3/resolve/main/sam3_litetext/efficient_sam3_image_encoder_mobileclip2_l_ctx16.pt)/ [GDrive](https://drive.google.com/file/d/1Mc4pk0FNCWwPTGoj1CCdAhkkNz02CUyY/view?usp=sharing) |
+
+> All models use the **SAM3 ViT-H image encoder** (353.72M vision params). The text encoder parameters shown represent the distilled student replacing the original 353.72M text encoder, achieving up to **88% parameter reduction**.
+
 ---
 
 ## Preliminary Evaluation
@@ -351,6 +363,7 @@ Coming soon: an interactive web demo for real-time concept segmentation and trac
 - [x] **Release Stage 1 Image Encoder Weights**: Distilled image encoder weights from SAM3 image encoder for all 9 variants (RepViT, TinyViT, EfficientViT)
 - [x] **Release Stage 1 Text Encoder Weights**: Distill SAM3 text encoder weights to MobileCLIP-S1 combined with all 9 image encoder variants
 - [x] **Release Stage 1+ Fine-Tuned Encoder Weights**: Prompt-in-the-loop supervised fine-tuning for improved encoder performance
+- [x] **Release SAM3-LiteText Weights**: Distilled a lightweight MobileCLIP text encoder that is competitive to the SAM3 text encoder for efficient vision-language segmentation
 - [ ] **Release Stage 2 Memory Bank Aligned Model Weights**: Models with Perceiver-based memory compression trained on SA-V dataset
 - [ ] **Release Stage 3 Fine-Tuned Model Weights**: End-to-end fine-tuned models on SAM3 dataset with full PCS capabilities
 - [ ] **ONNX/CoreML Export**: Export models to ONNX and CoreML formats for cross-platform deployment
@@ -380,12 +393,24 @@ If you use EfficientSAM3 in your research, please cite:
 ```bibtex
 @misc{zeng2025efficientsam3progressivehierarchicaldistillation,
   title={EfficientSAM3: Progressive Hierarchical Distillation for Video Concept Segmentation from SAM1, 2, and 3}, 
-  author={Chengxi Zeng and Yuxuan Jiang and Gao Ge and Shuai Wang and Fan Aaron Zhang},
+  author={Chengxi Zeng and Yuxuan Jiang and Aaron Zhang},
   year={2025},
   eprint={2511.15833},
   archivePrefix={arXiv},
   primaryClass={cs.CV},
   url={https://arxiv.org/abs/2511.15833}, 
+}
+```
+
+```bibtex
+@misc{zeng2026sam3litetextanatomicalstudysam3,
+      title={SAM3-LiteText: An Anatomical Study of the SAM3 Text Encoder for Efficient Vision-Language Segmentation}, 
+      author={Chengxi Zeng and Yuxuan Jiang and Ge Gao and Shuai Wang and Duolikun Danier and Bin Zhu and Stevan Rudinac and David Bull and Fan Zhang},
+      year={2026},
+      eprint={2602.12173},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2602.12173}, 
 }
 ```
 
@@ -410,7 +435,7 @@ Organizations and projects using EfficientSAM3:
   <tr>
     <td align="center" width="20%">
       <img src="https://github.com/SimonZeng7108/simonzeng7108.github.io/blob/main/efficientsam3/static/images/esa.png" alt="European Space Agency" height="80"><br>
-      <a href="https://www.esa.int/">European Space Agency</a>
+      <a href="https://www.esa.int/Applications/Observing_the_Earth/Phsat-2/Introducing_Phsat-2">European Space Agency</a>
     </td>
   </tr>
 </table>

@@ -1290,3 +1290,203 @@ def build_sam3_video_predictor(*model_args, gpus_to_use=None, **model_kwargs):
     return Sam3VideoPredictorMultiGPU(
         *model_args, gpus_to_use=gpus_to_use, **model_kwargs
     )
+
+
+def build_efficientsam3_video_model(
+    checkpoint_path: Optional[str] = None,
+    load_from_HF=False,
+    bpe_path: Optional[str] = None,
+    has_presence_token: bool = True,
+    strict_state_dict_loading: bool = False,
+    apply_temporal_disambiguation: bool = True,
+    device="cuda" if torch.cuda.is_available() else "cpu",
+    compile=False,
+    backbone_type="efficientvit",
+    model_name="b0",
+    text_encoder_type=None,
+    efficientvit_model=None,
+) -> Sam3VideoInferenceWithInstanceInteractivity:
+    """
+    Build EfficientSAM3 dense tracking model.
+
+    Args:
+        checkpoint_path: Optional path to checkpoint file
+        bpe_path: Path to the BPE tokenizer file
+        backbone_type: Type of backbone ('efficientvit', 'repvit', 'tinyvit')
+        model_name: Model variant (e.g. 'b0', 'm1.1', '5m')
+        text_encoder_type: Type of text encoder (e.g. 'MobileCLIP-S0'). If None, uses standard SAM3 text encoder.
+
+    Returns:
+        Sam3VideoInferenceWithInstanceInteractivity: The instantiated dense tracking model
+    """
+    if efficientvit_model is not None:
+        backbone_type = "efficientvit"
+        model_name = efficientvit_model
+
+    if bpe_path is None:
+        bpe_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "bpe_simple_vocab_16e6.txt.gz"
+        )
+
+    compile_mode = "default" if compile else None
+
+    # Build Tracker module
+    tracker = build_tracker(apply_temporal_disambiguation=apply_temporal_disambiguation)
+
+    # Build Detector components
+    # Use Student Vision Backbone
+    visual_neck = _create_student_vision_backbone(
+        backbone_type=backbone_type,
+        model_name=model_name,
+        compile_mode=compile_mode,
+        enable_inst_interactivity=True,  # Video tracking needs instance interactivity
+    )
+
+    # Use Student Text Encoder if specified
+    if text_encoder_type:
+        text_encoder = _create_student_text_encoder(bpe_path, text_encoder_type)
+    else:
+        text_encoder = _create_text_encoder(bpe_path)
+
+    backbone = SAM3VLBackbone(scalp=1, visual=visual_neck, text=text_encoder)
+    transformer = _create_sam3_transformer(has_presence_token=has_presence_token)
+    segmentation_head: UniversalSegmentationHead = (
+        _create_segmentation_head(compile_mode=compile_mode)
+    )
+    input_geometry_encoder = _create_geometry_encoder()
+
+    # Create main dot product scoring
+    main_dot_prod_mlp = MLP(
+        input_dim=256,
+        hidden_dim=2048,
+        output_dim=256,
+        num_layers=2,
+        dropout=0.1,
+        residual=True,
+        out_norm=nn.LayerNorm(256),
+    )
+    main_dot_prod_scoring = DotProductScoring(
+        d_model=256, d_proj=256, prompt_mlp=main_dot_prod_mlp
+    )
+
+    # Build Detector module
+    detector = Sam3ImageOnVideoMultiGPU(
+        num_feature_levels=1,
+        backbone=backbone,
+        transformer=transformer,
+        segmentation_head=segmentation_head,
+        semantic_segmentation_head=None,
+        input_geometry_encoder=input_geometry_encoder,
+        use_early_fusion=True,
+        use_dot_prod_scoring=True,
+        dot_prod_scoring=main_dot_prod_scoring,
+        supervise_joint_box_scores=has_presence_token,
+    )
+
+    # Build the main SAM3 video model
+    if apply_temporal_disambiguation:
+        model = Sam3VideoInferenceWithInstanceInteractivity(
+            detector=detector,
+            tracker=tracker,
+            score_threshold_detection=0.5,
+            assoc_iou_thresh=0.1,
+            det_nms_thresh=0.1,
+            new_det_thresh=0.7,
+            hotstart_delay=15,
+            hotstart_unmatch_thresh=8,
+            hotstart_dup_thresh=8,
+            suppress_unmatched_only_within_hotstart=True,
+            min_trk_keep_alive=-1,
+            max_trk_keep_alive=30,
+            init_trk_keep_alive=30,
+            suppress_overlapping_based_on_recent_occlusion_threshold=0.7,
+            suppress_det_close_to_boundary=False,
+            fill_hole_area=16,
+            recondition_every_nth_frame=16,
+            masklet_confirmation_enable=False,
+            decrease_trk_keep_alive_for_empty_masklets=False,
+            image_size=1008,
+            image_mean=(0.5, 0.5, 0.5),
+            image_std=(0.5, 0.5, 0.5),
+            compile_model=compile,
+        )
+    else:
+        # a version without any heuristics for ablation studies
+        model = Sam3VideoInferenceWithInstanceInteractivity(
+            detector=detector,
+            tracker=tracker,
+            score_threshold_detection=0.5,
+            assoc_iou_thresh=0.1,
+            det_nms_thresh=0.1,
+            new_det_thresh=0.7,
+            hotstart_delay=0,
+            hotstart_unmatch_thresh=0,
+            hotstart_dup_thresh=0,
+            suppress_unmatched_only_within_hotstart=True,
+            min_trk_keep_alive=-1,
+            max_trk_keep_alive=30,
+            init_trk_keep_alive=30,
+            suppress_overlapping_based_on_recent_occlusion_threshold=0.7,
+            suppress_det_close_to_boundary=False,
+            fill_hole_area=16,
+            recondition_every_nth_frame=0,
+            masklet_confirmation_enable=False,
+            decrease_trk_keep_alive_for_empty_masklets=False,
+            image_size=1008,
+            image_mean=(0.5, 0.5, 0.5),
+            image_std=(0.5, 0.5, 0.5),
+            compile_model=compile,
+        )
+
+    # Load checkpoint if provided
+    if load_from_HF and checkpoint_path is None:
+        # For EfficientSAM3, you may need to specify a different HuggingFace repo
+        pass  # Implement if needed
+
+    if checkpoint_path is not None:
+        with g_pathmgr.open(checkpoint_path, "rb") as f:
+            ckpt = torch.load(f, map_location="cpu", weights_only=True)
+        if "model" in ckpt and isinstance(ckpt["model"], dict):
+            ckpt = ckpt["model"]
+
+        # Handle EfficientSAM3 checkpoint keys (similar to image model potentially)
+        # Assuming checkpoint keys match model structure or need simple cleaning
+        missing_keys, unexpected_keys = model.load_state_dict(
+            ckpt, strict=strict_state_dict_loading
+        )
+        if missing_keys:
+            print(f"Missing keys: {missing_keys[:10]}")
+        if unexpected_keys:
+            print(f"Unexpected keys: {unexpected_keys[:10]}")
+
+    model.to(device=device)
+    return model
+
+
+def build_efficientsam3_video_predictor(
+    checkpoint_path: Optional[str] = None,
+    load_from_HF=False,
+    bpe_path: Optional[str] = None,
+    backbone_type="efficientvit",
+    model_name="b0",
+    text_encoder_type=None,
+    efficientvit_model=None,
+    strict_state_dict_loading: bool = False,
+    gpus_to_use=None,
+    **kwargs,
+):
+    model = build_efficientsam3_video_model(
+        checkpoint_path=checkpoint_path,
+        load_from_HF=load_from_HF,
+        bpe_path=bpe_path,
+        backbone_type=backbone_type,
+        model_name=model_name,
+        text_encoder_type=text_encoder_type,
+        efficientvit_model=efficientvit_model,
+        strict_state_dict_loading=strict_state_dict_loading,
+        **kwargs,
+    )
+    return Sam3VideoPredictorMultiGPU(
+        model=model,
+        gpus_to_use=gpus_to_use,
+    )
