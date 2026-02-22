@@ -79,15 +79,19 @@ def main():
         pretrained_sd = pretrained
         wrap_in_model = False
 
-    # Extract student_trunk keys and build replacement mapping
+    replacements = {}
     student_prefix = args.student_prefix
     target_prefix = args.target_prefix
     
-    replacements = {}
     for key, value in finetune_sd.items():
         if key.startswith(student_prefix):
             # Strip student prefix, add target prefix
             stripped_key = key[len(student_prefix):]
+            
+            # Skip keys that belong to the frozen SAM3 teacher (which might be present in the checkpoint)
+            if "sam3" in stripped_key or "teacher" in stripped_key:
+                continue
+                
             new_key = f"{target_prefix}{stripped_key}"
             replacements[new_key] = value
 
